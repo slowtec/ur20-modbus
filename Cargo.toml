@@ -1,0 +1,15 @@
+[package]
+name = "ur20-modbus"
+version = "0.0.0"
+authors = ["Markus Kohlhase <markus.kohlhase@slowtec.de>"]
+
+[dependencies]
+log = "*"
+tokio-core = "0.1"
+futures = "0.1"
+ur20 = "0.3"
+
+[dependencies.tokio-modbus]
+version = "0.2"
+default-features = false
+features = ["tcp"]
