@@ -11,7 +11,7 @@ use std::{io::{Error, ErrorKind}, net::SocketAddr};
 use futures::future::{self, Future};
 use tokio_modbus::*;
 use tokio_core::reactor::Handle;
-use ur20::{ur20_fbc_mod_tcp::*, ur20_fbc_mod_tcp::Coupler as MbCoupler};
+use ur20::{ModuleType, ur20_fbc_mod_tcp::*, ur20_fbc_mod_tcp::Coupler as MbCoupler};
 
 pub use ur20::{Address, ChannelValue};
 
@@ -19,6 +19,7 @@ pub struct Coupler {
     client: Client,
     input_count: u16,
     output_count: u16,
+    modules: Vec<ModuleType>,
     coupler: MbCoupler,
 }
 
@@ -132,12 +133,12 @@ impl Coupler {
             )
             .and_then(
                 |(client, modules, offsets, input_count, output_count, params)| {
+                    debug!("create coupler");
                     let cfg = CouplerConfig {
-                        modules,
+                        modules: modules.clone(),
                         offsets,
                         params,
                     };
-                    debug!("create coupler");
                     let coupler =
                         MbCoupler::new(&cfg).map_err(|err| Error::new(ErrorKind::Other, err))?;
                     Ok(Coupler {
@@ -145,6 +146,7 @@ impl Coupler {
                         coupler,
                         input_count,
                         output_count,
+                        modules,
                     })
                 },
             );
@@ -157,6 +159,11 @@ impl Coupler {
 
     pub fn outputs(&self) -> &Vec<Vec<ChannelValue>> {
         self.coupler.outputs()
+    }
+
+    pub fn modules(&self) -> &Vec<ModuleType> {
+        // TODO: expose 'modules' in 'ur20' crate
+        &self.modules
     }
 
     pub fn set_output(&mut self, addr: &Address, val: ChannelValue) -> Result<(), ur20::Error> {
