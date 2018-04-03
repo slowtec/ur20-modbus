@@ -198,12 +198,12 @@ impl Coupler {
         self.input().join(self.output())
     }
 
-    pub fn tick(mut self) -> impl Future<Item = Self, Error = Error> {
+    pub fn tick<'a>(&'a mut self) -> impl Future<Item = (), Error = Error> + 'a {
         debug!("fetch data");
         self.get_data().and_then(move |(input, output)| {
             self.next_out(&input, &output).and_then(move |output| {
                 debug!("write data");
-                self.write(&output).and_then(|_| Ok(self))
+                self.write(&output).and_then(|_| Ok(()))
             })
         })
     }
