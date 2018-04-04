@@ -5,7 +5,7 @@ extern crate tokio_core;
 extern crate tokio_modbus;
 extern crate ur20;
 
-use std::{io::{Error, ErrorKind}, net::SocketAddr};
+use std::{io::{Error, ErrorKind}, net::SocketAddr, cell::RefCell};
 use futures::future::{self, Future};
 use tokio_modbus::*;
 use tokio_core::reactor::Handle;
@@ -18,7 +18,7 @@ pub struct Coupler {
     input_count: u16,
     output_count: u16,
     modules: Vec<ModuleType>,
-    coupler: MbCoupler,
+    coupler: RefCell<MbCoupler>,
 }
 
 impl Coupler {
@@ -141,7 +141,7 @@ impl Coupler {
                         MbCoupler::new(&cfg).map_err(|err| Error::new(ErrorKind::Other, err))?;
                     Ok(Coupler {
                         client,
-                        coupler,
+                        coupler: RefCell::new(coupler),
                         input_count,
                         output_count,
                         modules,
@@ -151,12 +151,12 @@ impl Coupler {
         coupler
     }
 
-    pub fn inputs(&self) -> &Vec<Vec<ChannelValue>> {
-        self.coupler.inputs()
+    pub fn inputs(&self) -> Vec<Vec<ChannelValue>> {
+        self.coupler.borrow().inputs().clone()
     }
 
-    pub fn outputs(&self) -> &Vec<Vec<ChannelValue>> {
-        self.coupler.outputs()
+    pub fn outputs(&self) -> Vec<Vec<ChannelValue>> {
+        self.coupler.borrow().outputs().clone()
     }
 
     pub fn modules(&self) -> &Vec<ModuleType> {
@@ -164,8 +164,8 @@ impl Coupler {
         &self.modules
     }
 
-    pub fn set_output(&mut self, addr: &Address, val: ChannelValue) -> Result<(), ur20::Error> {
-        self.coupler.set_output(addr, val)
+    pub fn set_output(&self, addr: &Address, val: ChannelValue) -> Result<(), ur20::Error> {
+        self.coupler.borrow_mut().set_output(addr, val)
     }
 
     fn input(&self) -> impl Future<Item = Vec<u16>, Error = Error> {
@@ -179,11 +179,11 @@ impl Coupler {
     }
 
     fn next_out(
-        &mut self,
+        &self,
         input: &[u16],
         output: &[u16],
     ) -> impl Future<Item = Vec<u16>, Error = Error> {
-        match self.coupler.next(&input, &output) {
+        match self.coupler.borrow_mut().next(&input, &output) {
             Ok(data) => future::ok(data),
             Err(err) => future::err(Error::new(ErrorKind::Other, err)),
         }
@@ -198,7 +198,7 @@ impl Coupler {
         self.input().join(self.output())
     }
 
-    pub fn tick<'a>(&'a mut self) -> impl Future<Item = (), Error = Error> + 'a {
+    pub fn tick<'a>(&'a self) -> impl Future<Item = (), Error = Error> + 'a {
         debug!("fetch data");
         self.get_data().and_then(move |(input, output)| {
             self.next_out(&input, &output).and_then(move |output| {
