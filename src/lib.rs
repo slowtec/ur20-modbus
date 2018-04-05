@@ -5,7 +5,7 @@ extern crate tokio_core;
 extern crate tokio_modbus;
 extern crate ur20;
 
-use std::{io::{Error, ErrorKind}, net::SocketAddr, cell::RefCell};
+use std::{cell::RefCell, collections::HashMap, io::{Error, ErrorKind}, net::SocketAddr};
 use futures::future::{self, Future};
 use tokio_modbus::*;
 use tokio_core::reactor::Handle;
@@ -151,15 +151,37 @@ impl Coupler {
         coupler
     }
 
-    pub fn inputs(&self) -> Vec<Vec<ChannelValue>> {
-        self.coupler.borrow().inputs().clone()
+    pub fn inputs(&self) -> HashMap<Address, ChannelValue> {
+        self.coupler
+            .borrow()
+            .inputs()
+            .clone()
+            .into_iter()
+            .enumerate()
+            .flat_map(|(module, vals)| {
+                vals.into_iter()
+                    .enumerate()
+                    .map(move |(channel, value)| (Address { module, channel }, value))
+            })
+            .collect()
     }
 
-    pub fn outputs(&self) -> Vec<Vec<ChannelValue>> {
-        self.coupler.borrow().outputs().clone()
+    pub fn outputs(&self) -> HashMap<Address, ChannelValue> {
+        self.coupler
+            .borrow()
+            .outputs()
+            .clone()
+            .into_iter()
+            .enumerate()
+            .flat_map(|(module, vals)| {
+                vals.into_iter()
+                    .enumerate()
+                    .map(move |(channel, value)| (Address { module, channel }, value))
+            })
+            .collect()
     }
 
-    pub fn modules(&self) -> &Vec<ModuleType> {
+    pub fn modules(&self) -> &[ModuleType] {
         // TODO: expose 'modules' in 'ur20' crate
         &self.modules
     }
