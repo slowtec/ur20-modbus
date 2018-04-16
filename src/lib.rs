@@ -16,6 +16,7 @@ use ur20::{ur20_fbc_mod_tcp::Coupler as MbCoupler, ur20_fbc_mod_tcp::*, ModuleTy
 
 pub use ur20::{Address, ChannelValue};
 
+/// A Modbus TCP fieldbus coupler (`UR20-FBC-MOD-TCP`) implementation.
 pub struct Coupler {
     id: String,
     client: Client,
@@ -26,6 +27,7 @@ pub struct Coupler {
 }
 
 impl Coupler {
+    /// Connect to the coupler.
     pub fn connect(addr: SocketAddr, handle: Handle) -> impl Future<Item = Coupler, Error = Error> {
         let coupler = Client::connect_tcp(&addr, &handle)
             .and_then(|client| {
@@ -101,10 +103,12 @@ impl Coupler {
         coupler
     }
 
+    /// The actual coupler ID.
     pub fn id(&self) -> &str {
         &self.id
     }
 
+    /// Current input state.
     pub fn inputs(&self) -> HashMap<Address, ChannelValue> {
         self.coupler
             .borrow()
@@ -120,6 +124,7 @@ impl Coupler {
             .collect()
     }
 
+    /// Current output state.
     pub fn outputs(&self) -> HashMap<Address, ChannelValue> {
         self.coupler
             .borrow()
@@ -135,11 +140,13 @@ impl Coupler {
             .collect()
     }
 
+    /// List of modules.
     pub fn modules(&self) -> &[ModuleType] {
         // TODO: expose 'modules' in 'ur20' crate
         &self.modules
     }
 
+    /// Set the value of an output channel.
     pub fn set_output(&self, addr: &Address, val: ChannelValue) -> Result<(), ur20::Error> {
         self.coupler.borrow_mut().set_output(addr, val)
     }
@@ -174,6 +181,9 @@ impl Coupler {
         self.input().join(self.output())
     }
 
+    /// Run an I/O cycle.
+    /// This reads all process input registers and
+    /// writes to process output registers.
     pub fn tick<'a>(&'a self) -> impl Future<Item = (), Error = Error> + 'a {
         debug!("fetch data");
         self.get_data().and_then(move |(input, output)| {

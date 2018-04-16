@@ -1,10 +1,14 @@
 [package]
 name = "ur20-modbus"
-version = "0.0.0"
+version = "0.1.0"
 authors = ["Markus Kohlhase <markus.kohlhase@slowtec.de>"]
+license = "MIT/Apache-2.0"
+homepage = "https://github.com/slowtec/ur20-modbus"
+description = "Modbus TCP fieldbus coupler (`UR20-FBC-MOD-TCP`) implementation"
+repository = "https://github.com/slowtec/ur20-modbus"
 
 [dependencies]
-log = "*"
+log = "0.4"
 tokio-core = "0.1"
 futures = "0.1"
 ur20 = "0.3"
