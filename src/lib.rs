@@ -17,7 +17,7 @@ use ur20::{ur20_fbc_mod_tcp::Coupler as MbCoupler, ur20_fbc_mod_tcp::*, ModuleTy
 pub use ur20::{Address, ChannelValue};
 
 pub struct Coupler {
-    pub id: String,
+    id: String,
     client: Client,
     input_count: u16,
     output_count: u16,
@@ -99,6 +99,10 @@ impl Coupler {
                 },
             );
         coupler
+    }
+
+    pub fn id(&self) -> &str {
+        &self.id
     }
 
     pub fn inputs(&self) -> HashMap<Address, ChannelValue> {
