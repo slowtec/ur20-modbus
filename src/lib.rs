@@ -161,6 +161,29 @@ impl Coupler {
             .read_holding_registers(ADDR_PACKED_PROCESS_OUTPUT_DATA, self.output_count)
     }
 
+    pub fn read_input_data(&self) -> HashMap<Address, Option<Vec<u8>>> {
+        let mut map = HashMap::new();
+        let mut c = self.coupler.borrow_mut();
+        for (i, _) in self.modules.iter().enumerate() {
+            if let Some(r) = c.reader(i) {
+                let addr = Address{module: i, channel: 0};
+                let mut buf = vec![];
+                let res = match r.read_to_end(&mut buf) {
+                    Ok(len) => {
+                        if len > 0 {
+                            Some(buf)
+                        } else {
+                            None
+                        }
+                    }
+                    Err(_) => None // Should never happen: see ur20 crate
+                };
+                map.insert(addr, res);
+            }
+        }
+        map
+    }
+
     fn next_out(
         &self,
         input: &[u16],
