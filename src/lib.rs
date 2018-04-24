@@ -19,7 +19,7 @@ pub use ur20::{Address, ChannelValue};
 /// A Modbus TCP fieldbus coupler (`UR20-FBC-MOD-TCP`) implementation.
 ///
 /// # Example:
-///```rust
+///```rust,no_run
 /// extern crate futures;
 /// extern crate tokio_core;
 /// extern crate ur20_modbus;
