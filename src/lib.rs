@@ -17,6 +17,27 @@ use ur20::{ur20_fbc_mod_tcp::Coupler as MbCoupler, ur20_fbc_mod_tcp::*, ModuleTy
 pub use ur20::{Address, ChannelValue};
 
 /// A Modbus TCP fieldbus coupler (`UR20-FBC-MOD-TCP`) implementation.
+///
+/// # Example:
+///```rust
+/// extern crate futures;
+/// extern crate tokio_core;
+/// extern crate ur20_modbus;
+///
+/// use futures::Future;
+/// use tokio_core::reactor::Core;
+/// use ur20_modbus::Coupler;
+///
+/// let mut core = Core::new().unwrap();
+/// let handle = core.handle();
+/// let addr = "192.168.178.3:502".parse().unwrap();
+/// let client = Coupler::connect(addr, handle);
+/// let task = client.and_then(|client|{
+///     println!("Connected to {}", client.id());
+///     Ok(())
+/// });
+/// core.run(task).unwrap();
+///```
 pub struct Coupler {
     id: String,
     client: Client,
@@ -161,6 +182,7 @@ impl Coupler {
             .read_holding_registers(ADDR_PACKED_PROCESS_OUTPUT_DATA, self.output_count)
     }
 
+    /// Read binary input data.
     pub fn read_input_data(&self) -> HashMap<Address, Option<Vec<u8>>> {
         let mut map = HashMap::new();
         let mut c = self.coupler.borrow_mut();
