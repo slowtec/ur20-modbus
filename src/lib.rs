@@ -1,11 +1,13 @@
+#![feature(proc_macro, generators)]
+
 #[macro_use]
 extern crate log;
-extern crate futures;
+extern crate futures_await as futures;
 extern crate tokio_core;
 extern crate tokio_modbus;
 extern crate ur20;
 
-use futures::future::{self, Future};
+use futures::{future, prelude::*};
 use std::{cell::RefCell,
           collections::HashMap,
           io::{Error, ErrorKind},
@@ -44,84 +46,40 @@ pub struct Coupler {
     input_count: u16,
     output_count: u16,
     modules: Vec<ModuleType>,
+    // TODO: Once async/await is available in Rust, we can get rid of RefCell.
+    // Then we can borrow &mut self :)
     coupler: RefCell<MbCoupler>,
 }
 
 impl Coupler {
     /// Connect to the coupler.
-    pub fn connect(addr: SocketAddr, handle: Handle) -> impl Future<Item = Coupler, Error = Error> {
-        let coupler = Client::connect_tcp(&addr, &handle)
-            .and_then(|client| {
-                let coupler_id = read_coupler_id(&client);
-                let cnt = read_module_count(&client);
+    #[async]
+    pub fn connect(addr: SocketAddr, handle: Handle) -> Result<Coupler, Error> {
+        let client = await!(Client::connect_tcp(&addr, &handle))?;
+        let coupler_id = await!(read_coupler_id(&client))?;
+        let cnt = await!(read_module_count(&client))?;
+        let modules = await!(read_module_list(&client, cnt))?;
+        print_module_list(&modules);
+        let offsets = await!(read_module_offsets(&client, &modules))?;
+        let input_count = await!(read_process_input_register_count(&client))?;
+        let output_count = await!(read_process_output_register_count(&client))?;
+        let params = await!(read_parameters(&client, &modules))?;
 
-                coupler_id.join(cnt).and_then(|(id, cnt)| {
-                    read_module_list(&client, cnt)
-                        .and_then(|module_list| {
-                            print_module_list(&module_list);
-                            Ok((client, id, module_list))
-                        })
-                        .and_then(|(client, id, module_list)| {
-                            read_module_offsets(&client, &module_list)
-                                .and_then(|raw_offsets| Ok((client, id, module_list, raw_offsets)))
-                        })
-                        .and_then(|(client, id, module_list, offsets)| {
-                            read_process_input_register_count(&client).and_then(|input_count| {
-                                Ok((client, id, module_list, offsets, input_count))
-                            })
-                        })
-                        .and_then(|(client, id, module_list, offsets, input_count)| {
-                            read_process_output_register_count(&client).and_then(
-                                move |output_count| {
-                                    Ok((
-                                        client,
-                                        id,
-                                        module_list,
-                                        offsets,
-                                        input_count,
-                                        output_count,
-                                    ))
-                                },
-                            )
-                        })
-                        .and_then(
-                            |(client, id, module_list, offsets, input_count, output_count)| {
-                                read_parameters(&client, &module_list).and_then(move |params| {
-                                    Ok((
-                                        client,
-                                        id,
-                                        module_list,
-                                        offsets,
-                                        input_count,
-                                        output_count,
-                                        params,
-                                    ))
-                                })
-                            },
-                        )
-                })
-            })
-            .and_then(
-                |(client, id, modules, offsets, input_count, output_count, params)| {
-                    debug!("create coupler");
-                    let cfg = CouplerConfig {
-                        modules: modules.clone(),
-                        offsets,
-                        params,
-                    };
-                    let coupler =
-                        MbCoupler::new(&cfg).map_err(|err| Error::new(ErrorKind::Other, err))?;
-                    Ok(Coupler {
-                        id,
-                        client,
-                        coupler: RefCell::new(coupler),
-                        input_count,
-                        output_count,
-                        modules,
-                    })
-                },
-            );
-        coupler
+        debug!("create coupler");
+        let cfg = CouplerConfig {
+            modules: modules.clone(),
+            offsets,
+            params,
+        };
+        let coupler = MbCoupler::new(&cfg).map_err(|err| Error::new(ErrorKind::Other, err))?;
+        Ok(Coupler {
+            id: coupler_id,
+            client,
+            coupler: RefCell::new(coupler),
+            input_count,
+            output_count,
+            modules,
+        })
     }
 
     /// The actual coupler ID.
@@ -188,7 +146,10 @@ impl Coupler {
         let mut c = self.coupler.borrow_mut();
         for (i, _) in self.modules.iter().enumerate() {
             if let Some(r) = c.reader(i) {
-                let addr = Address{module: i, channel: 0};
+                let addr = Address {
+                    module: i,
+                    channel: 0,
+                };
                 let mut buf = vec![];
                 let res = match r.read_to_end(&mut buf) {
                     Ok(len) => {
@@ -198,7 +159,7 @@ impl Coupler {
                             None
                         }
                     }
-                    Err(_) => None // Should never happen: see ur20 crate
+                    Err(_) => None, // Should never happen: see ur20 crate
                 };
                 map.insert(addr, res);
             }

@@ -10,8 +10,11 @@ repository = "https://github.com/slowtec/ur20-modbus"
 [dependencies]
 log = "0.4"
 tokio-core = "0.1"
-futures = "0.1"
 ur20 = "0.4"
+futures-await = "*"
+
+[dev-dependencies]
+futures = "*"
 
 [dependencies.tokio-modbus]
 version = "0.2"
