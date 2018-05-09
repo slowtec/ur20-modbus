@@ -2,7 +2,7 @@ sudo: required
 language: rust
 matrix:
   include:
-  - rust: nightly
+  - rust: beta
 
 addons:
   apt:
