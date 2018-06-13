@@ -317,7 +317,7 @@ fn read_module_offsets(
     debug!("read module offsets");
     client
         .read_input_registers(ADDR_MODULE_OFFSETS, module_list.len() as u16 * 2)
-        .and_then(move |raw_offsets| Ok(raw_offsets))
+        .and_then(Ok)
 }
 
 fn read_process_input_register_count(client: &Client) -> impl Future<Item = u16, Error = Error> {
@@ -359,7 +359,7 @@ fn read_parameters(
         .into_iter()
         .map(|(addr, reg_cnt)| client.read_holding_registers(addr, reg_cnt))
         .collect();
-    futures::future::join_all(params).and_then(move |params| Ok(params))
+    futures::future::join_all(params).and_then(Ok)
 }
 
 fn process_img_len_to_register_count(process_len: u16) -> u16 {
