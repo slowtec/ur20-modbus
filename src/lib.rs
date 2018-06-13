@@ -238,6 +238,17 @@ impl Coupler {
             })
         })
     }
+
+    /// This method behaves like [Coupler::tick] but it consumes the [Coupler] and returns it as [Future::Item].
+    pub fn tick_and_consume(self) -> impl Future<Item = Self, Error = Error> {
+        debug!("fetch data");
+        self.get_data().and_then(move |(input, output)| {
+            self.next_out(&input, &output).and_then(move |output| {
+                debug!("write data");
+                self.write(&output).and_then(|_| Ok(self))
+            })
+        })
+    }
 }
 
 fn read_coupler_id(client: &Client) -> impl Future<Item = String, Error = Error> {
