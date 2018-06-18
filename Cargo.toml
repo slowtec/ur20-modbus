@@ -1,6 +1,6 @@
 [package]
 name = "ur20-modbus"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Markus Kohlhase <markus.kohlhase@slowtec.de>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/slowtec/ur20-modbus"
