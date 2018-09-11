@@ -3,7 +3,7 @@ extern crate log;
 extern crate futures;
 extern crate tokio_core;
 extern crate tokio_modbus;
-extern crate ur20;
+pub extern crate ur20;
 
 use futures::future::{self, Future};
 use std::{
@@ -14,9 +14,9 @@ use std::{
 };
 use tokio_core::reactor::Handle;
 use tokio_modbus::*;
-use ur20::{ur20_fbc_mod_tcp::Coupler as MbCoupler, ur20_fbc_mod_tcp::*, ModuleType};
-
-pub use ur20::{Address, ChannelValue};
+use ur20::{
+    ur20_fbc_mod_tcp::Coupler as MbCoupler, ur20_fbc_mod_tcp::*, Address, ChannelValue, ModuleType,
+};
 
 /// A Modbus TCP fieldbus coupler (`UR20-FBC-MOD-TCP`) implementation.
 ///
