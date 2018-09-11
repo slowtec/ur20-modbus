@@ -6,10 +6,12 @@ extern crate tokio_modbus;
 extern crate ur20;
 
 use futures::future::{self, Future};
-use std::{cell::RefCell,
-          collections::HashMap,
-          io::{Error, ErrorKind},
-          net::SocketAddr};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    io::{Error, ErrorKind},
+    net::SocketAddr,
+};
 use tokio_core::reactor::Handle;
 use tokio_modbus::*;
 use ur20::{ur20_fbc_mod_tcp::Coupler as MbCoupler, ur20_fbc_mod_tcp::*, ModuleType};
@@ -188,7 +190,10 @@ impl Coupler {
         let mut c = self.coupler.borrow_mut();
         for (i, _) in self.modules.iter().enumerate() {
             if let Some(r) = c.reader(i) {
-                let addr = Address{module: i, channel: 0};
+                let addr = Address {
+                    module: i,
+                    channel: 0,
+                };
                 let mut buf = vec![];
                 let res = match r.read_to_end(&mut buf) {
                     Ok(len) => {
@@ -198,7 +203,7 @@ impl Coupler {
                             None
                         }
                     }
-                    Err(_) => None // Should never happen: see ur20 crate
+                    Err(_) => None, // Should never happen: see ur20 crate
                 };
                 map.insert(addr, res);
             }
@@ -357,7 +362,13 @@ fn read_parameters(
     debug!("read parameters");
     let params: Vec<_> = param_addresses_and_register_counts(&module_list)
         .into_iter()
-        .map(|(addr, reg_cnt)| client.read_holding_registers(addr, reg_cnt))
+        .map(|(addr, reg_cnt)| {
+            if reg_cnt == 0 {
+                Box::new(futures::future::ok(vec![]))
+            } else {
+                client.read_holding_registers(addr, reg_cnt)
+            }
+        })
         .collect();
     futures::future::join_all(params).and_then(Ok)
 }
