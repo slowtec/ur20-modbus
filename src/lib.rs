@@ -1,8 +1,5 @@
 #[macro_use]
 extern crate log;
-extern crate futures;
-extern crate tokio_core;
-extern crate tokio_modbus;
 pub extern crate ur20;
 
 use futures::future::{self, Future};
@@ -13,7 +10,7 @@ use std::{
     net::SocketAddr,
 };
 use tokio_core::reactor::Handle;
-use tokio_modbus::*;
+use tokio_modbus::{client::Context as Client, prelude::*};
 use ur20::{
     ur20_fbc_mod_tcp::Coupler as MbCoupler, ur20_fbc_mod_tcp::*, Address, ChannelValue, ModuleType,
 };
@@ -52,7 +49,7 @@ pub struct Coupler {
 impl Coupler {
     /// Connect to the coupler.
     pub fn connect(addr: SocketAddr, handle: Handle) -> impl Future<Item = Coupler, Error = Error> {
-        let coupler = Client::connect_tcp(&addr, &handle)
+        let coupler = tcp::connect(&handle, addr)
             .and_then(|client| {
                 let coupler_id = read_coupler_id(&client);
                 let cnt = read_module_count(&client);
