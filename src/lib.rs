@@ -2,7 +2,7 @@
 //! with the Modbus TCP fieldbus coupler Weidmüller UR20-FBC-MOD-TCP.
 //!
 //! # Example:
-//!```rust,norun
+//!```rust,no_run
 //! use std::error::Error;
 //! use ur20_modbus::Coupler;
 //!
