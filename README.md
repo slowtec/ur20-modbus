@@ -1,11 +1,11 @@
 # UR20 Modbus
 
 `ur20-modbus` is a [Rust](https://rust-lang.org) library for communicating with the
-Modbus TCP fieldbus coupler UR20-FBC-MOD-TCP.
+Modbus TCP fieldbus coupler Weidmüller UR20-FBC-MOD-TCP.
 
 ## License
 
-Copyright (c) 2018, slowtec GmbH
+Copyright (c) 2018-2020, slowtec GmbH
 
 Licensed under either of
 
