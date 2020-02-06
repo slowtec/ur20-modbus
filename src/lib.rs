@@ -28,7 +28,6 @@
 extern crate log;
 
 use std::{
-    cell::RefCell,
     collections::HashMap,
     io::{Error, ErrorKind},
     net::SocketAddr,
@@ -46,7 +45,7 @@ pub struct Coupler {
     input_count: u16,
     output_count: u16,
     modules: Vec<ModuleType>,
-    coupler: RefCell<MbCoupler>,
+    coupler: MbCoupler,
 }
 
 impl Coupler {
@@ -69,7 +68,7 @@ impl Coupler {
         let coupler = MbCoupler::new(&cfg).map_err(|err| Error::new(ErrorKind::Other, err))?;
         Ok(Coupler {
             client: ctx,
-            coupler: RefCell::new(coupler),
+            coupler,
             input_count,
             output_count,
             modules,
@@ -92,7 +91,6 @@ impl Coupler {
     /// Current input state.
     pub fn inputs(&self) -> HashMap<Address, ChannelValue> {
         self.coupler
-            .borrow()
             .inputs()
             .clone()
             .into_iter()
@@ -108,7 +106,6 @@ impl Coupler {
     /// Current output state.
     pub fn outputs(&self) -> HashMap<Address, ChannelValue> {
         self.coupler
-            .borrow()
             .outputs()
             .clone()
             .into_iter()
@@ -129,11 +126,11 @@ impl Coupler {
 
     /// Set the value of an output channel.
     pub fn set_output(
-        &self,
+        &mut self,
         addr: &Address,
         val: ChannelValue,
     ) -> std::result::Result<(), ur20::Error> {
-        self.coupler.borrow_mut().set_output(addr, val)
+        self.coupler.set_output(addr, val)
     }
 
     async fn input(&mut self) -> Result<Vec<u16>> {
@@ -149,11 +146,10 @@ impl Coupler {
     }
 
     /// Read binary input data.
-    pub fn read_input_data(&self) -> HashMap<Address, Option<Vec<u8>>> {
+    pub fn read_input_data(&mut self) -> HashMap<Address, Option<Vec<u8>>> {
         let mut map = HashMap::new();
-        let mut c = self.coupler.borrow_mut();
         for (i, _) in self.modules.iter().enumerate() {
-            if let Some(r) = c.reader(i) {
+            if let Some(r) = self.coupler.reader(i) {
                 let addr = Address {
                     module: i,
                     channel: 0,
@@ -181,7 +177,6 @@ impl Coupler {
 
     fn next_out(&mut self, input: &[u16], output: &[u16]) -> Result<Vec<u16>> {
         self.coupler
-            .borrow_mut()
             .next(&input, &output)
             .map_err(|err| Error::new(ErrorKind::Other, err))
     }
