@@ -146,7 +146,7 @@ impl Coupler {
     }
 
     /// Read binary input data.
-    pub fn read_input_data(&mut self) -> HashMap<Address, Option<Vec<u8>>> {
+    pub fn binary_input_data(&mut self) -> HashMap<Address, Option<Vec<u8>>> {
         let mut map = HashMap::new();
         for (i, _) in self.modules.iter().enumerate() {
             if let Some(r) = self.coupler.reader(i) {
