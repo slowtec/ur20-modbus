@@ -204,16 +204,6 @@ impl Coupler {
         self.write(&output).await?;
         Ok(())
     }
-
-    /// This method behaves like [Coupler::tick] but it consumes the [Coupler] and returns it.
-    pub async fn tick_and_consume(mut self) -> Result<Self> {
-        debug!("fetch data");
-        let (input, output) = self.get_data().await?;
-        let output = self.next_out(&input, &output)?;
-        debug!("write data");
-        self.write(&output).await?;
-        Ok(self)
-    }
 }
 
 async fn read_module_count(client: &mut Client) -> Result<u16> {
