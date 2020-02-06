@@ -10,11 +10,16 @@ edition = "2018"
 
 [dependencies]
 log = "0.4"
-tokio-core = "0.1"
-futures = "0.1"
 ur20 = "0.5"
 
 [dependencies.tokio-modbus]
-version = "0.3"
+version = "0.4"
 default-features = false
 features = ["tcp"]
+
+[dev-dependencies]
+tokio = { version = "*", features = ["full"] }
+
+[patch.crates-io.tokio-modbus]
+git = "https://github.com/slowtec/tokio-modbus"
+rev = "0146987"
