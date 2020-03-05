@@ -75,7 +75,10 @@ impl Coupler {
             modules,
         })
     }
-
+    /// Disconnect the coupler.
+    pub async fn disconnect(&mut self) -> Result<()> {
+        self.client.disconnect().await
+    }
     /// Read the actual coupler ID.
     pub async fn id(&mut self) -> Result<String> {
         debug!("Read the coupler ID");

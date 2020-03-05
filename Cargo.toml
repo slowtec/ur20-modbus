@@ -24,6 +24,9 @@ tokio = { version = "*", features = ["full"] }
 git = "https://github.com/slowtec/tokio-modbus"
 branch = "derive-debug"
 
+[patch.crates-io.ur20]
+git = "https://github.com/slowtec/ur20"
+
 [badges]
 travis-ci = { repository = "slowtec/ur20-modbus" }
 maintenance = { status = "actively-developed" }
