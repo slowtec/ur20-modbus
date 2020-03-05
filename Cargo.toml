@@ -10,7 +10,7 @@ edition = "2018"
 
 [dependencies]
 log = "0.4"
-ur20 = "0.5"
+ur20 = "0.5.1"
 
 [dependencies.tokio-modbus]
 version = "0.4"
@@ -22,7 +22,7 @@ tokio = { version = "*", features = ["full"] }
 
 [patch.crates-io.tokio-modbus]
 git = "https://github.com/slowtec/tokio-modbus"
-rev = "0146987"
+branch = "derive-debug"
 
 [badges]
 travis-ci = { repository = "slowtec/ur20-modbus" }

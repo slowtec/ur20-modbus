@@ -40,6 +40,7 @@ use ur20::{
 type Result<T> = std::result::Result<T, Error>;
 
 /// A Modbus TCP fieldbus coupler implementation.
+#[derive(Debug)]
 pub struct Coupler {
     client: Client,
     input_count: u16,
