@@ -138,15 +138,23 @@ impl Coupler {
     }
 
     async fn input(&mut self) -> Result<Vec<u16>> {
-        self.client
-            .read_input_registers(ADDR_PACKED_PROCESS_INPUT_DATA, self.input_count)
-            .await
+        if self.input_count == 0 {
+            Ok(vec![])
+        } else {
+            self.client
+                .read_input_registers(ADDR_PACKED_PROCESS_INPUT_DATA, self.input_count)
+                .await
+        }
     }
 
     async fn output(&mut self) -> Result<Vec<u16>> {
-        self.client
-            .read_holding_registers(ADDR_PACKED_PROCESS_OUTPUT_DATA, self.output_count)
-            .await
+        if self.output_count == 0 {
+            Ok(vec![])
+        } else {
+            self.client
+                .read_holding_registers(ADDR_PACKED_PROCESS_OUTPUT_DATA, self.output_count)
+                .await
+        }
     }
 
     /// Read binary input data.
