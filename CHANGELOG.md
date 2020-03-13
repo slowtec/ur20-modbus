@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.0 (unreleased)
+## v0.4.0 (2020-03-13)
 
 - Update to `tokio-modbus` `v0.4`
 - Remove usage of RefCell

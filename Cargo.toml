@@ -18,7 +18,7 @@ default-features = false
 features = ["tcp"]
 
 [dev-dependencies]
-tokio = { version = "*", features = ["full"] }
+tokio = { version = "0.2", features = ["full"] }
 
 [badges]
 travis-ci = { repository = "slowtec/ur20-modbus" }
