@@ -20,10 +20,6 @@ features = ["tcp"]
 [dev-dependencies]
 tokio = { version = "*", features = ["full"] }
 
-[patch.crates-io.tokio-modbus]
-git = "https://github.com/slowtec/tokio-modbus"
-rev = "0146987"
-
 [badges]
 travis-ci = { repository = "slowtec/ur20-modbus" }
 maintenance = { status = "actively-developed" }
