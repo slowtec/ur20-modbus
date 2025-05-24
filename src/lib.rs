@@ -205,7 +205,7 @@ impl Coupler {
     }
 
     fn next_out(&mut self, input: &[u16], output: &[u16]) -> Result<Vec<u16>> {
-        self.coupler.next(&input, &output).map_err(Error::Ur20Error)
+        self.coupler.next(input, output).map_err(Error::Ur20Error)
     }
 
     async fn write(&mut self, output: &[u16]) -> Result<()> {
@@ -311,7 +311,7 @@ async fn read_process_output_register_count(client: &mut Client) -> Result<u16> 
 async fn read_parameters(client: &mut Client, module_list: &[ModuleType]) -> Result<Vec<Vec<u16>>> {
     debug!("read parameters");
     let mut params = vec![];
-    for (addr, reg_cnt) in &param_addresses_and_register_counts(&module_list) {
+    for (addr, reg_cnt) in &param_addresses_and_register_counts(module_list) {
         params.push(if *reg_cnt == 0 {
             vec![]
         } else {
