@@ -6,7 +6,8 @@ license = "MIT/Apache-2.0"
 homepage = "https://github.com/slowtec/ur20-modbus"
 description = "Modbus TCP fieldbus coupler (`UR20-FBC-MOD-TCP`) implementation"
 repository = "https://github.com/slowtec/ur20-modbus"
-edition = "2018"
+edition = "2024"
+rust-version = "1.85"
 
 [dependencies]
 log = "0.4"
