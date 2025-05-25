@@ -23,5 +23,4 @@ features = ["tcp"]
 tokio = { version = "1", features = ["full"] }
 
 [badges]
-travis-ci = { repository = "slowtec/ur20-modbus" }
 maintenance = { status = "actively-developed" }

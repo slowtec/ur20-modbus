@@ -5,7 +5,6 @@ Modbus TCP fieldbus coupler Weidmüller UR20-FBC-MOD-TCP.
 
 [![Crates.io version](https://img.shields.io/crates/v/ur20-modbus.svg)](https://crates.io/crates/ur20-modbus)
 [![Docs](https://docs.rs/ur20-modbus/badge.svg)](https://docs.rs/ur20-modbus/)
-[![Build Status](https://travis-ci.org/slowtec/ur20-modbus.svg?branch=master)](https://travis-ci.org/slowtec/ur20-modbus)
 
 ## License
 
