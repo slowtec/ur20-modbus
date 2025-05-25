@@ -27,15 +27,28 @@
 #[macro_use]
 extern crate log;
 
-use std::{
-    collections::HashMap,
-    io::{Error, ErrorKind},
-    net::SocketAddr,
+use std::{collections::HashMap, io, net::SocketAddr};
+use tokio_modbus::{
+    client::{Client as _, Context as Client},
+    prelude::*,
 };
-use tokio_modbus::{client::Context as Client, prelude::*};
 use ur20::{
     ur20_fbc_mod_tcp::Coupler as MbCoupler, ur20_fbc_mod_tcp::*, Address, ChannelValue, ModuleType,
 };
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    IoError(#[from] io::Error),
+    #[error(transparent)]
+    ModbusError(#[from] tokio_modbus::Error),
+    #[error(transparent)]
+    ModbusException(#[from] tokio_modbus::ExceptionCode),
+    #[error(transparent)]
+    Ur20Error(#[from] ur20::Error),
+    #[error("Unexpected response: {0}")]
+    UnexpectedResponse(String),
+}
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -65,7 +78,7 @@ impl Coupler {
             offsets: raw_offsets,
             params,
         };
-        let coupler = MbCoupler::new(&cfg).map_err(|err| Error::new(ErrorKind::Other, err))?;
+        let coupler = MbCoupler::new(&cfg)?;
         Ok(Coupler {
             client: ctx,
             coupler,
@@ -76,12 +89,15 @@ impl Coupler {
     }
     /// Disconnect the coupler.
     pub async fn disconnect(&mut self) -> Result<()> {
-        self.client.disconnect().await
+        Ok(self.client.disconnect().await?)
     }
     /// Read the actual coupler ID.
     pub async fn id(&mut self) -> Result<String> {
         debug!("Read the coupler ID");
-        let buff = self.client.read_input_registers(ADDR_COUPLER_ID, 7).await?;
+        let buff = self
+            .client
+            .read_input_registers(ADDR_COUPLER_ID, 7)
+            .await??;
         let buf: Vec<u8> = buff.iter().fold(vec![], |mut x, elem| {
             x.push((elem & 0xff) as u8);
             x.push((elem >> 8) as u8);
@@ -142,7 +158,8 @@ impl Coupler {
         } else {
             self.client
                 .read_input_registers(ADDR_PACKED_PROCESS_INPUT_DATA, self.input_count)
-                .await
+                .await?
+                .map_err(Error::ModbusException)
         }
     }
 
@@ -152,7 +169,8 @@ impl Coupler {
         } else {
             self.client
                 .read_holding_registers(ADDR_PACKED_PROCESS_OUTPUT_DATA, self.output_count)
-                .await
+                .await?
+                .map_err(Error::ModbusException)
         }
     }
 
@@ -187,15 +205,14 @@ impl Coupler {
     }
 
     fn next_out(&mut self, input: &[u16], output: &[u16]) -> Result<Vec<u16>> {
-        self.coupler
-            .next(&input, &output)
-            .map_err(|err| Error::new(ErrorKind::Other, err))
+        self.coupler.next(&input, &output).map_err(Error::Ur20Error)
     }
 
     async fn write(&mut self, output: &[u16]) -> Result<()> {
         self.client
             .write_multiple_registers(ADDR_PACKED_PROCESS_OUTPUT_DATA, output)
-            .await
+            .await?
+            .map_err(Error::ModbusException)
     }
 
     async fn get_data(&mut self) -> Result<(Vec<u16>, Vec<u16>)> {
@@ -221,9 +238,9 @@ async fn read_module_count(client: &mut Client) -> Result<u16> {
     debug!("Read module count");
     let buff = client
         .read_input_registers(ADDR_CURRENT_MODULE_COUNT, 1)
-        .await?;
+        .await??;
     if buff.is_empty() {
-        return Err(Error::new(ErrorKind::Other, "Invalid buffer length"));
+        return Err(Error::UnexpectedResponse("Invalid buffer length".into()));
     }
     let cnt = buff[0];
     if cnt == 0 {
@@ -238,9 +255,8 @@ async fn read_module_list(client: &mut Client, cnt: u16) -> Result<Vec<ModuleTyp
     }
     let raw_list = client
         .read_input_registers(ADDR_CURRENT_MODULE_LIST, cnt * 2)
-        .await?;
-    let module_list =
-        module_list_from_registers(&raw_list).map_err(|err| Error::new(ErrorKind::Other, err))?;
+        .await??;
+    let module_list = module_list_from_registers(&raw_list)?;
     Ok(module_list)
 }
 
@@ -260,14 +276,15 @@ async fn read_module_offsets(client: &mut Client, module_list: &[ModuleType]) ->
     debug!("read module offsets");
     client
         .read_input_registers(ADDR_MODULE_OFFSETS, module_list.len() as u16 * 2)
-        .await
+        .await?
+        .map_err(Error::ModbusException)
 }
 
 async fn read_process_input_register_count(client: &mut Client) -> Result<u16> {
     debug!("read process input length");
     let raw_input_count = client
         .read_input_registers(ADDR_PROCESS_INPUT_LEN, 1)
-        .await?;
+        .await??;
     let cnt = if raw_input_count.is_empty() {
         0
     } else {
@@ -281,7 +298,7 @@ async fn read_process_output_register_count(client: &mut Client) -> Result<u16> 
     debug!("read process output length");
     let raw_output_count = client
         .read_input_registers(ADDR_PROCESS_OUTPUT_LEN, 1)
-        .await?;
+        .await??;
     let cnt = if raw_output_count.is_empty() {
         0
     } else {
@@ -298,7 +315,7 @@ async fn read_parameters(client: &mut Client, module_list: &[ModuleType]) -> Res
         params.push(if *reg_cnt == 0 {
             vec![]
         } else {
-            client.read_holding_registers(*addr, *reg_cnt).await?
+            client.read_holding_registers(*addr, *reg_cnt).await??
         })
     }
 
