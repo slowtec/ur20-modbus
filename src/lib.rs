@@ -24,16 +24,15 @@
 //! }
 //!```
 
-#[macro_use]
-extern crate log;
-
 use std::{collections::HashMap, io, net::SocketAddr};
+
 use tokio_modbus::{
     client::{Client as _, Context as Client},
     prelude::*,
 };
+
 use ur20::{
-    ur20_fbc_mod_tcp::Coupler as MbCoupler, ur20_fbc_mod_tcp::*, Address, ChannelValue, ModuleType,
+    Address, ChannelValue, ModuleType, ur20_fbc_mod_tcp::Coupler as MbCoupler, ur20_fbc_mod_tcp::*,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -72,7 +71,7 @@ impl Coupler {
         let input_count = read_process_input_register_count(&mut ctx).await?;
         let output_count = read_process_output_register_count(&mut ctx).await?;
         let params = read_parameters(&mut ctx, &modules).await?;
-        debug!("create coupler");
+        log::debug!("create coupler");
         let cfg = CouplerConfig {
             modules: modules.clone(),
             offsets: raw_offsets,
@@ -93,7 +92,7 @@ impl Coupler {
     }
     /// Read the actual coupler ID.
     pub async fn id(&mut self) -> Result<String> {
-        debug!("Read the coupler ID");
+        log::debug!("Read the coupler ID");
         let buff = self
             .client
             .read_input_registers(ADDR_COUPLER_ID, 7)
@@ -108,6 +107,7 @@ impl Coupler {
     }
 
     /// Current input state.
+    #[must_use]
     pub fn inputs(&self) -> HashMap<Address, ChannelValue> {
         self.coupler
             .inputs()
@@ -123,6 +123,7 @@ impl Coupler {
     }
 
     /// Current output state.
+    #[must_use]
     pub fn outputs(&self) -> HashMap<Address, ChannelValue> {
         self.coupler
             .outputs()
@@ -138,6 +139,7 @@ impl Coupler {
     }
 
     /// List of modules.
+    #[must_use]
     pub fn modules(&self) -> &[ModuleType] {
         // TODO: expose 'modules' in 'ur20' crate
         &self.modules
@@ -184,19 +186,12 @@ impl Coupler {
                     channel: 0,
                 };
                 let mut buf = vec![];
-                let res = match r.read_to_end(&mut buf) {
-                    Ok(len) => {
-                        if len > 0 {
-                            Some(buf)
-                        } else {
-                            None
-                        }
-                    }
-                    Err(_) => {
-                        // Should never happen: see ur20 crate
-                        debug_assert!(false);
-                        None
-                    }
+                let res = if let Ok(len) = r.read_to_end(&mut buf) {
+                    if len > 0 { Some(buf) } else { None }
+                } else {
+                    // Should never happen: see ur20 crate
+                    debug_assert!(false);
+                    None
                 };
                 map.insert(addr, res);
             }
@@ -225,17 +220,17 @@ impl Coupler {
     /// This reads all process input registers and
     /// writes to process output registers.
     pub async fn tick(&mut self) -> Result<()> {
-        debug!("fetch data");
+        log::debug!("fetch data");
         let (input, output) = self.get_data().await?;
         let output = self.next_out(&input, &output)?;
-        debug!("write data");
+        log::debug!("write data");
         self.write(&output).await?;
         Ok(())
     }
 }
 
 async fn read_module_count(client: &mut Client) -> Result<u16> {
-    debug!("Read module count");
+    log::debug!("Read module count");
     let buff = client
         .read_input_registers(ADDR_CURRENT_MODULE_COUNT, 1)
         .await??;
@@ -244,7 +239,7 @@ async fn read_module_count(client: &mut Client) -> Result<u16> {
     }
     let cnt = buff[0];
     if cnt == 0 {
-        warn!("UR20-System has no modules!");
+        log::warn!("UR20-System has no modules!");
     }
     Ok(cnt)
 }
@@ -263,17 +258,17 @@ async fn read_module_list(client: &mut Client, cnt: u16) -> Result<Vec<ModuleTyp
 fn print_module_list_info(module_list: &[ModuleType]) {
     let module_names: Vec<_> = module_list
         .iter()
-        .map(|m| format!("{:?}", m))
+        .map(|m| format!("{m:?}"))
         .map(|n| n.replace("UR20_", ""))
         .collect();
-    info!("The following I/O modules were detected:");
+    log::info!("The following I/O modules were detected:");
     for (i, n) in module_names.iter().enumerate() {
-        info!(" {} - {}", i, n);
+        log::info!(" {i} - {n}");
     }
 }
 
 async fn read_module_offsets(client: &mut Client, module_list: &[ModuleType]) -> Result<Vec<u16>> {
-    debug!("read module offsets");
+    log::debug!("read module offsets");
     client
         .read_input_registers(ADDR_MODULE_OFFSETS, module_list.len() as u16 * 2)
         .await?
@@ -281,7 +276,7 @@ async fn read_module_offsets(client: &mut Client, module_list: &[ModuleType]) ->
 }
 
 async fn read_process_input_register_count(client: &mut Client) -> Result<u16> {
-    debug!("read process input length");
+    log::debug!("read process input length");
     let raw_input_count = client
         .read_input_registers(ADDR_PROCESS_INPUT_LEN, 1)
         .await??;
@@ -295,7 +290,7 @@ async fn read_process_input_register_count(client: &mut Client) -> Result<u16> {
 }
 
 async fn read_process_output_register_count(client: &mut Client) -> Result<u16> {
-    debug!("read process output length");
+    log::debug!("read process output length");
     let raw_output_count = client
         .read_input_registers(ADDR_PROCESS_OUTPUT_LEN, 1)
         .await??;
@@ -309,14 +304,14 @@ async fn read_process_output_register_count(client: &mut Client) -> Result<u16> 
 }
 
 async fn read_parameters(client: &mut Client, module_list: &[ModuleType]) -> Result<Vec<Vec<u16>>> {
-    debug!("read parameters");
+    log::debug!("read parameters");
     let mut params = vec![];
     for (addr, reg_cnt) in &param_addresses_and_register_counts(module_list) {
         params.push(if *reg_cnt == 0 {
             vec![]
         } else {
             client.read_holding_registers(*addr, *reg_cnt).await??
-        })
+        });
     }
 
     Ok(params)

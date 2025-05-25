@@ -6,7 +6,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let addr = "192.168.0.222:502".parse()?;
     let mut coupler = Coupler::connect(addr).await?;
     let id = coupler.id().await?;
-    println!("Connected to {}", id);
+    println!("Connected to {id}");
     coupler.set_output(
         &ur20::Address {
             module: 3,
