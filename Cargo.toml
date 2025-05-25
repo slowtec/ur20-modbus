@@ -12,7 +12,7 @@ rust-version = "1.85"
 [dependencies]
 log = "0.4"
 thiserror = "2.0.12"
-ur20 = "0.5"
+ur20 = "0.6"
 
 [dependencies.tokio-modbus]
 version = "0.16.1"
