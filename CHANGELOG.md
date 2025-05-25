@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.5.0 (2025-05-25)
+
+- Update `tokio` to `v1`
+- Update `tokio-modbus` to `v0.16`
+- Update `ur20` to `v0.6`
+- Switch to Rust Edition 2024
+
 ## v0.4.0 (2020-03-13)
 
 - Update to `tokio-modbus` `v0.4`

@@ -8,7 +8,7 @@ Modbus TCP fieldbus coupler Weidmüller UR20-FBC-MOD-TCP.
 
 ## License
 
-Copyright (c) 2018-2020, slowtec GmbH
+Copyright (c) 2018-2025, slowtec GmbH
 
 Licensed under either of
 
