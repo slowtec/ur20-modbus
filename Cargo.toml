@@ -10,15 +10,16 @@ edition = "2018"
 
 [dependencies]
 log = "0.4"
+thiserror = "2.0.12"
 ur20 = "0.5"
 
 [dependencies.tokio-modbus]
-version = "0.4"
+version = "0.16.1"
 default-features = false
 features = ["tcp"]
 
 [dev-dependencies]
-tokio = { version = "0.2", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
 
 [badges]
 travis-ci = { repository = "slowtec/ur20-modbus" }
